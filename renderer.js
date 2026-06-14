@@ -557,6 +557,20 @@ function formatTime(started) {
   }
 }
 
+/* ====== Startup Toggle ====== */
+const startupToggle = $('startupToggle');
+window.api.getStartupSetting().then(enabled => {
+  startupToggle.checked = enabled;
+});
+startupToggle.addEventListener('change', async () => {
+  const result = await window.api.setStartupSetting(startupToggle.checked);
+  startupToggle.checked = result;
+  showToast(
+    result ? 'TaskInsight will run at startup' : 'Removed from startup',
+    result ? 'success' : 'info'
+  );
+});
+
 /* ====== Initial UI State ====== */
 toggleDetails(false);
 // Mark CPU column as sorted initially

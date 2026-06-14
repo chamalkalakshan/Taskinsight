@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('api', {
   openFileLocation: (filePath) => ipcRenderer.invoke('open-file-location', filePath),
   searchOnline: (query) => ipcRenderer.invoke('search-online', query),
 
+  // Startup setting
+  getStartupSetting: () => ipcRenderer.invoke('get-startup-setting'),
+  setStartupSetting: (enable) => ipcRenderer.invoke('set-startup-setting', enable),
+
   // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),

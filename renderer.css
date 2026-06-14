@@ -298,6 +298,45 @@ html, body {
 }
 .admin-ok { color: var(--risk-safe) !important; }
 .admin-no { color: var(--text3); }
+#startupRow { justify-content: flex-start; margin-top: 4px; }
+#startupRow span { flex: 1; }
+.startup-toggle {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.startup-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-knob {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+}
+.toggle-knob::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  background: var(--text3);
+  border-radius: 50%;
+  transition: left 0.2s, background 0.2s;
+}
+.startup-toggle input:checked + .toggle-knob {
+  background: rgba(31,111,235,0.2);
+  border-color: var(--accent);
+}
+.startup-toggle input:checked + .toggle-knob::after {
+  left: 14px;
+  background: var(--accent-hover);
+}
 
 /* ====== Content Area ====== */
 #content {

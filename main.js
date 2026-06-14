@@ -1,22 +1,39 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, shell } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const { getProcesses, getSystemStats } = require('./core/processManager');
 
 let mainWindow = null;
+let tray = null;
+let isQuitting = false;
 let processInterval = null;
 let statsInterval = null;
 let isRefreshing = false;
 
+function createTray() {
+  const iconPath = path.join(__dirname, 'assets', 'tray.png');
+  tray = new Tray(iconPath);
+  tray.setToolTip('TaskInsight');
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Show TaskInsight', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
+    { type: 'separator' },
+    { label: 'Quit TaskInsight', click: () => { isQuitting = true; app.quit(); } },
+  ]));
+  tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
+}
+
 function createWindow() {
+  const startHidden = app.getLoginItemSettings().wasOpenedAtLogin;
+
   mainWindow = new BrowserWindow({
     width: 1300,
     height: 820,
     minWidth: 1000,
     minHeight: 620,
     frame: false,
+    show: !startHidden,
     backgroundColor: '#0d1117',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -27,9 +44,16 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
+  // Hide to tray on close — quit only from tray menu
+  mainWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   mainWindow.on('closed', () => { mainWindow = null; });
 
-  // Dev tools in dev mode
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
@@ -59,14 +83,9 @@ async function pushStatsData() {
 }
 
 function startRefreshCycles() {
-  // Initial load
   pushStatsData();
   setTimeout(pushProcessData, 500);
-
-  // Stats: every second
   statsInterval = setInterval(pushStatsData, 1500);
-
-  // Processes: every 4 seconds
   processInterval = setInterval(pushProcessData, 4000);
 }
 
@@ -78,7 +97,6 @@ ipcMain.handle('force-refresh', async () => {
 
 ipcMain.handle('is-admin', () => {
   return new Promise((resolve) => {
-    // 'net session' fails for non-admin users — reliable Windows admin check
     exec('net session', (err) => resolve(!err));
   });
 });
@@ -144,24 +162,32 @@ ipcMain.handle('search-online', async (_, query) => {
   }
 });
 
+ipcMain.handle('get-startup-setting', () => app.getLoginItemSettings().openAtLogin);
+
+ipcMain.handle('set-startup-setting', (_, enable) => {
+  app.setLoginItemSettings({ openAtLogin: !!enable });
+  return app.getLoginItemSettings().openAtLogin;
+});
+
 ipcMain.on('window-minimize', () => mainWindow?.minimize());
 ipcMain.on('window-maximize', () => {
   if (mainWindow?.isMaximized()) mainWindow.unmaximize();
   else mainWindow?.maximize();
 });
-ipcMain.on('window-close', () => mainWindow?.close());
+ipcMain.on('window-close', () => mainWindow?.close()); // triggers hide-to-tray
 
 app.whenReady().then(() => {
   createWindow();
+  createTray();
   startRefreshCycles();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (!mainWindow) createWindow();
   });
 });
 
 app.on('window-all-closed', () => {
   clearInterval(processInterval);
   clearInterval(statsInterval);
-  if (process.platform !== 'darwin') app.quit();
+  if (!tray) app.quit(); // safety: no tray means quit normally
 });
