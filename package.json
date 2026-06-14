@@ -1,0 +1,22 @@
+{
+  "name": "taskinsight",
+  "version": "1.0.0",
+  "description": "TaskInsight — understand what is running on your machine",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "dist": "electron-packager . \"TaskInsight\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --ignore=\"node_modules/electron$\" --ignore=\"node_modules/@electron/packager\" --ignore=\"dist\" --ignore=\"build\" --app-version=1.0.0"
+  },
+  "dependencies": {
+    "systeminformation": "^5.23.5",
+    "winreg": "^1.2.4"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.1",
+    "electron": "^28.3.3"
+  },
+  "keywords": ["task-manager", "process-monitor", "electron"],
+  "author": "TaskInsight",
+  "license": "MIT"
+}

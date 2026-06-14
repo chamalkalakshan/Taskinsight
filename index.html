@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>TaskInsight</title>
+  <link rel="stylesheet" href="renderer.css">
+</head>
+<body>
+
+  <!-- Custom Title Bar -->
+  <div id="titleBar">
+    <div id="appBrand">
+      <svg class="brand-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="9" stroke="#1f6feb" stroke-width="1.5"/>
+        <path d="M6 10h8M10 6v8" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="10" cy="10" r="2" fill="#1f6feb"/>
+      </svg>
+      <span class="brand-name">TaskInsight</span>
+    </div>
+    <div id="windowControls">
+      <button class="win-btn" id="btnMinimize" title="Minimize">&#x2212;</button>
+      <button class="win-btn" id="btnMaximize" title="Maximize">&#x25A1;</button>
+      <button class="win-btn close-btn" id="btnClose" title="Close">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- System Stats Bar -->
+  <div id="statsBar">
+    <div class="stat-card" id="cpuCard">
+      <div class="stat-icon cpu-icon">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M6 1v2M10 1v2M6 13v2M10 13v2M1 6h2M1 10h2M13 6h2M13 10h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x="5.5" y="5.5" width="5" height="5" rx="0.5" fill="currentColor" opacity="0.4"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">CPU</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-track"><div class="stat-bar-fill cpu-fill" id="cpuBar" style="width:0%"></div></div></div>
+        <div class="stat-value" id="cpuVal">0%</div>
+      </div>
+    </div>
+
+    <div class="stat-card" id="ramCard">
+      <div class="stat-icon ram-icon">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="14" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 5V3.5M6 5V3.5M8 5V3.5M10 5V3.5M12 5V3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x="3" y="7" width="2" height="4" rx="0.3" fill="currentColor" opacity="0.5"/><rect x="7" y="7" width="2" height="4" rx="0.3" fill="currentColor" opacity="0.5"/><rect x="11" y="7" width="2" height="4" rx="0.3" fill="currentColor" opacity="0.5"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">RAM</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-track"><div class="stat-bar-fill ram-fill" id="ramBar" style="width:0%"></div></div></div>
+        <div class="stat-value" id="ramVal">0%</div>
+      </div>
+      <div class="stat-sub" id="ramSub">0 / 0 GB</div>
+    </div>
+
+    <div class="stat-card" id="diskCard">
+      <div class="stat-icon disk-icon">
+        <svg viewBox="0 0 16 16" fill="none"><ellipse cx="8" cy="8" rx="7" ry="5" stroke="currentColor" stroke-width="1.2"/><ellipse cx="8" cy="8" rx="2" ry="1.5" fill="currentColor" opacity="0.5"/><path d="M1 8c0 2.76 3.13 5 7 5s7-2.24 7-5" stroke="currentColor" stroke-width="1.2"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">Disk C:</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-track"><div class="stat-bar-fill disk-fill" id="diskBar" style="width:0%"></div></div></div>
+        <div class="stat-value" id="diskVal">0%</div>
+      </div>
+      <div class="stat-sub" id="diskSub">0 / 0 GB</div>
+    </div>
+
+    <div class="stat-divider"></div>
+
+    <div class="stat-pill" id="processCountPill">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span id="processCountLabel">0 processes</span>
+    </div>
+
+    <div class="stat-pill" id="suspiciousPill" style="display:none">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M8 2L14 13H2L8 2Z" stroke="#f85149" stroke-width="1.2"/><path d="M8 6v4M8 11.5v.5" stroke="#f85149" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span id="suspiciousCountLabel">0 suspicious</span>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div id="mainLayout">
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="sidebar-section-label">Categories</div>
+      <nav id="categoryNav">
+        <button class="cat-btn active" data-cat="all">
+          <span class="cat-dot" style="background:#8b949e"></span>
+          <span class="cat-name">All Processes</span>
+          <span class="cat-count" id="count-all">0</span>
+        </button>
+        <button class="cat-btn" data-cat="system">
+          <span class="cat-dot" style="background:#58a6ff"></span>
+          <span class="cat-name">System</span>
+          <span class="cat-count" id="count-system">0</span>
+        </button>
+        <button class="cat-btn" data-cat="services">
+          <span class="cat-dot" style="background:#bc8cff"></span>
+          <span class="cat-name">Services</span>
+          <span class="cat-count" id="count-services">0</span>
+        </button>
+        <button class="cat-btn" data-cat="security">
+          <span class="cat-dot" style="background:#3fb950"></span>
+          <span class="cat-name">Security</span>
+          <span class="cat-count" id="count-security">0</span>
+        </button>
+        <button class="cat-btn" data-cat="apps">
+          <span class="cat-dot" style="background:#4ac26b"></span>
+          <span class="cat-name">Installed Apps</span>
+          <span class="cat-count" id="count-apps">0</span>
+        </button>
+        <button class="cat-btn" data-cat="browser">
+          <span class="cat-dot" style="background:#ffa657"></span>
+          <span class="cat-name">Browsers</span>
+          <span class="cat-count" id="count-browser">0</span>
+        </button>
+        <button class="cat-btn" data-cat="startup">
+          <span class="cat-dot" style="background:#e3b341"></span>
+          <span class="cat-name">Startup Apps</span>
+          <span class="cat-count" id="count-startup">0</span>
+        </button>
+        <button class="cat-btn" data-cat="user">
+          <span class="cat-dot" style="background:#79c0ff"></span>
+          <span class="cat-name">User Apps</span>
+          <span class="cat-count" id="count-user">0</span>
+        </button>
+        <button class="cat-btn" data-cat="background">
+          <span class="cat-dot" style="background:#6e7681"></span>
+          <span class="cat-name">Background</span>
+          <span class="cat-count" id="count-background">0</span>
+        </button>
+        <button class="cat-btn suspicious-cat" data-cat="suspicious">
+          <span class="cat-dot" style="background:#f85149"></span>
+          <span class="cat-name">Suspicious</span>
+          <span class="cat-count" id="count-suspicious">0</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="footer-row" id="adminBadge">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 2L13 4.5V8C13 11 10.5 13.5 8 14C5.5 13.5 3 11 3 8V4.5L8 2Z" stroke="currentColor" stroke-width="1.2"/></svg>
+          <span id="adminLabel">Checking...</span>
+        </div>
+        <div class="footer-hint">Click a process for details</div>
+      </div>
+    </div>
+
+    <!-- Content Area -->
+    <div id="content">
+
+      <!-- Toolbar -->
+      <div id="toolbar">
+        <div class="search-group">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="#8b949e" stroke-width="1.3"/><path d="M10 10l3.5 3.5" stroke="#8b949e" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <input type="text" id="searchInput" placeholder="Search process name, path, or user..." autocomplete="off" spellcheck="false">
+          <button id="btnClearSearch" class="clear-search-btn" style="display:none">&#x2715;</button>
+        </div>
+        <div class="toolbar-right">
+          <label class="sort-label">Sort:</label>
+          <select id="sortSelect" class="toolbar-select">
+            <option value="cpu">CPU</option>
+            <option value="memory">Memory</option>
+            <option value="name">Name</option>
+            <option value="risk">Risk</option>
+            <option value="pid">PID</option>
+          </select>
+          <button id="btnRefresh" class="toolbar-btn">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13 8A5 5 0 1 1 3.5 5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M3 2v4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Refresh
+          </button>
+          <button id="btnAutoRefresh" class="toolbar-btn active" title="Toggle auto-refresh">
+            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3.5l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Auto
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div id="tableWrapper">
+        <table id="processTable">
+          <thead>
+            <tr>
+              <th class="col-name th-sortable" data-col="name">Process Name <span class="sort-arrow">⇅</span></th>
+              <th class="col-pid th-sortable" data-col="pid">PID <span class="sort-arrow">⇅</span></th>
+              <th class="col-status">Status</th>
+              <th class="col-cpu th-sortable" data-col="cpu">CPU% <span class="sort-arrow">⇅</span></th>
+              <th class="col-mem th-sortable" data-col="memory">Memory <span class="sort-arrow">⇅</span></th>
+              <th class="col-risk th-sortable" data-col="risk">Risk <span class="sort-arrow">⇅</span></th>
+              <th class="col-user">User</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr class="loading-row"><td colspan="7">
+              <div class="loading-spinner"></div>
+              <span>Loading processes...</span>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Details Panel -->
+      <div id="detailsPanel" class="panel-collapsed">
+        <div id="detailsHandle">
+          <button id="btnToggleDetails" class="handle-toggle">
+            <svg id="handleArrow" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="handleLabel">Process Details</span>
+          </button>
+          <div class="handle-actions" id="detailsActions">
+            <button class="action-btn btn-kill" id="btnKill" title="Terminate process">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Kill
+            </button>
+            <button class="action-btn btn-suspend" id="btnSuspend" title="Suspend/resume process">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M6 4v8M10 4v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Suspend
+            </button>
+            <button class="action-btn btn-location" id="btnLocation" title="Open file location">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h4l1.5 2H14v8H2V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+              Open Location
+            </button>
+            <button class="action-btn btn-search" id="btnSearchOnline" title="Search online">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M10 10l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Search Online
+            </button>
+          </div>
+        </div>
+        <div id="detailsBody">
+          <div class="details-top">
+            <div class="details-title-row">
+              <div class="details-proc-name" id="dName">—</div>
+              <div class="details-risk-badge" id="dRiskBadge"></div>
+            </div>
+            <div class="details-desc" id="dDesc" style="display:none"></div>
+          </div>
+          <div class="details-grid">
+            <div class="detail-cell"><div class="dc-label">PID</div><div class="dc-val" id="dPid">—</div></div>
+            <div class="detail-cell"><div class="dc-label">Status</div><div class="dc-val" id="dStatus">—</div></div>
+            <div class="detail-cell"><div class="dc-label">User</div><div class="dc-val" id="dUser">—</div></div>
+            <div class="detail-cell"><div class="dc-label">Publisher</div><div class="dc-val" id="dPublisher">—</div></div>
+            <div class="detail-cell"><div class="dc-label">Threads</div><div class="dc-val" id="dThreads">—</div></div>
+            <div class="detail-cell"><div class="dc-label">Started</div><div class="dc-val" id="dStarted">—</div></div>
+            <div class="detail-cell full-width"><div class="dc-label">Executable Path</div><div class="dc-val path-val" id="dPath">—</div></div>
+            <div class="detail-cell full-width"><div class="dc-label">Command Line</div><div class="dc-val path-val" id="dCommand">—</div></div>
+          </div>
+          <div class="risk-section" id="riskSection" style="display:none">
+            <div class="risk-section-title">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M8 2L14 13H2L8 2Z" stroke="currentColor" stroke-width="1.2"/><path d="M8 6v4M8 11v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Risk Indicators
+            </div>
+            <ul class="risk-reasons-list" id="riskReasonsList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div id="statusBar">
+    <div class="status-left">
+      <span id="statusTotal">Loading...</span>
+      <span class="status-sep">·</span>
+      <span id="statusFiltered"></span>
+    </div>
+    <div class="status-right">
+      <span id="statusAdmin" class="status-tag tag-warn">Not Admin</span>
+      <span id="statusRefreshLabel" class="status-tag tag-on">Auto ✓</span>
+      <span id="statusLastRefresh">Just refreshed</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
