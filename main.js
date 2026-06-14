@@ -164,6 +164,17 @@ ipcMain.handle('search-online', async (_, query) => {
   }
 });
 
+ipcMain.handle('relaunch-as-admin', () => {
+  const exePath = process.execPath;
+  const args = process.argv.slice(1).map(a => a.replace(/'/g, "''"));
+  const argList = args.length ? `-ArgumentList ${args.map(a => `'${a}'`).join(',')}` : '';
+  const cmd = app.isPackaged
+    ? `Start-Process '${exePath}' -Verb RunAs`
+    : `Start-Process '${exePath}' -Verb RunAs ${argList}`;
+  exec(`powershell -Command "${cmd}"`);
+  setTimeout(() => { isQuitting = true; app.quit(); }, 500);
+});
+
 ipcMain.handle('get-startup-setting', () => app.getLoginItemSettings().openAtLogin);
 
 ipcMain.handle('set-startup-setting', (_, enable) => {

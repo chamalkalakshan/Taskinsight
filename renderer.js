@@ -333,14 +333,21 @@ window.api.isAdmin().then(isAdmin => {
     adminLabel.textContent = 'Running as Admin';
     adminLabel.className = 'admin-ok';
     adminBadge.title = 'Running with administrator privileges — all processes visible';
+    adminBadge.style.cursor = 'default';
     statusAdmin.textContent = 'Admin ✓';
     statusAdmin.className = 'status-tag tag-on';
   } else {
-    adminLabel.textContent = 'Limited Mode';
+    adminLabel.textContent = 'Limited Mode — click to elevate';
     adminLabel.className = 'admin-no';
-    adminBadge.title = 'Not running as admin — some processes may be hidden';
+    adminBadge.title = 'Click to relaunch as Administrator';
+    adminBadge.style.cursor = 'pointer';
     statusAdmin.textContent = 'Not Admin';
     statusAdmin.className = 'status-tag tag-warn';
+
+    adminBadge.addEventListener('click', async () => {
+      if (!confirm('Relaunch TaskInsight as Administrator?\n\nWindows will show a UAC prompt.')) return;
+      await window.api.relaunchAsAdmin();
+    }, { once: true });
   }
 });
 

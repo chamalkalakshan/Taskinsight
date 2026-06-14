@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('api', {
   openFileLocation: (filePath) => ipcRenderer.invoke('open-file-location', filePath),
   searchOnline: (query) => ipcRenderer.invoke('search-online', query),
 
+  // Admin elevation
+  relaunchAsAdmin: () => ipcRenderer.invoke('relaunch-as-admin'),
+
   // Startup setting
   getStartupSetting: () => ipcRenderer.invoke('get-startup-setting'),
   setStartupSetting: (enable) => ipcRenderer.invoke('set-startup-setting', enable),
