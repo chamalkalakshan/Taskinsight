@@ -2,7 +2,7 @@
 
 A Windows desktop app that shows you exactly what is running on your machine, grouped into categories that make sense, with plain-English explanations and risk scoring.
 
-![TaskInsight](assets/icon.png)
+<img src="assets/icon.png" width="80" alt="TaskInsight"/>
 
 ---
 
