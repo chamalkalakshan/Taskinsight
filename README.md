@@ -23,7 +23,7 @@ Most task managers throw a raw list of process names at you. TaskInsight groups 
 
 ## Screenshots
 
-> Launch the app and check the Startup Apps or Suspicious categories first.
+![TaskInsight main window](assets/screenshot.png)
 
 ---
 
