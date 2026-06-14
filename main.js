@@ -2,6 +2,7 @@
 
 const { app, BrowserWindow, ipcMain, Tray, Menu, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { exec } = require('child_process');
 const { getProcesses, getSystemStats } = require('./core/processManager');
 
@@ -176,7 +177,16 @@ ipcMain.on('window-maximize', () => {
 });
 ipcMain.on('window-close', () => mainWindow?.close()); // triggers hide-to-tray
 
+function ensureDefaultStartup() {
+  const flagPath = path.join(app.getPath('userData'), '.startup-configured');
+  if (!fs.existsSync(flagPath)) {
+    app.setLoginItemSettings({ openAtLogin: true });
+    fs.writeFileSync(flagPath, '1');
+  }
+}
+
 app.whenReady().then(() => {
+  ensureDefaultStartup();
   createWindow();
   createTray();
   startRefreshCycles();
