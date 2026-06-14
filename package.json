@@ -1,12 +1,12 @@
 {
   "name": "taskinsight",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TaskInsight — understand what is running on your machine",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "dist": "electron-packager . \"TaskInsight\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=assets/icon.ico --ignore=\"node_modules/electron$\" --ignore=\"node_modules/@electron/packager\" --ignore=\"dist\" --ignore=\"build\" --app-version=1.0.0"
+    "dist": "electron-packager . \"TaskInsight\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --icon=assets/icon.ico --ignore=\"node_modules/electron$\" --ignore=\"node_modules/@electron/packager\" --ignore=\"dist\" --ignore=\"build\" --app-version=1.1.0"
   },
   "dependencies": {
     "systeminformation": "^5.23.5",

@@ -118,8 +118,13 @@ window.api.onStatsUpdate((stats) => {
 
 /* ====== Process Update ====== */
 window.api.onProcessUpdate((processes) => {
-  if (!state.autoRefresh) return; // Paused — ignore incoming updates
+  if (!state.autoRefresh) return;
   state.processes = processes || [];
+  // M-3: remove stale suspended PIDs for reused process slots
+  const livePids = new Set(state.processes.map(p => p.pid));
+  for (const pid of state.suspendedPids) {
+    if (!livePids.has(pid)) state.suspendedPids.delete(pid);
+  }
   state.lastRefresh = new Date();
   applyFilterAndRender();
   updateCategoryCounts();
@@ -199,7 +204,7 @@ function renderTable(list) {
         </div>
       </td>
       <td style="color:var(--text2)">${proc.pid}</td>
-      <td><span class="status-badge ${getStatusClass(proc.status)}">${proc.status || '?'}</span></td>
+      <td><span class="status-badge ${getStatusClass(proc.status)}">${escHtml(proc.status || '?')}</span></td>
       <td>
         <div class="cpu-cell">
           <div class="cpu-mini-bar"><div class="cpu-mini-fill ${cpuClass}" style="width:${cpuWidth}%"></div></div>
@@ -349,7 +354,7 @@ window.api.isAdmin().then(isAdmin => {
       await window.api.relaunchAsAdmin();
     }, { once: true });
   }
-});
+}).catch(() => {});
 
 /* ====== Event: Category Buttons ====== */
 document.querySelectorAll('.cat-btn').forEach(btn => {
@@ -524,7 +529,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     window.api.forceRefresh();
   }
-  if (e.key === 'Delete' && state.selected) {
+  if (e.key === 'Delete' && state.selected && state.detailsOpen) {
     btnKill.click();
   }
 });
@@ -545,6 +550,7 @@ function getStatusClass(status) {
   const s = status.toLowerCase();
   if (s === 'running') return 'status-running';
   if (s === 'sleeping' || s === 'idle' || s === 'wait') return 'status-sleeping';
+  if (s === 'stopped' || s === 'zombie') return 'status-stopped';
   return 'status-other';
 }
 
@@ -568,7 +574,7 @@ function formatTime(started) {
 const startupToggle = $('startupToggle');
 window.api.getStartupSetting().then(enabled => {
   startupToggle.checked = enabled;
-});
+}).catch(() => {});
 startupToggle.addEventListener('change', async () => {
   const result = await window.api.setStartupSetting(startupToggle.checked);
   startupToggle.checked = result;

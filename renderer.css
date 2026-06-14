@@ -536,6 +536,7 @@ html, body {
 }
 .status-running { background: rgba(63,185,80,0.15); color: var(--risk-safe); }
 .status-sleeping { background: rgba(139,148,158,0.15); color: var(--text3); }
+.status-stopped { background: rgba(248,81,73,0.15); color: var(--risk-critical); }
 .status-other { background: rgba(227,179,65,0.15); color: var(--risk-medium); }
 
 /* Risk badge */

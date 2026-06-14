@@ -3,7 +3,7 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const { getProcesses, getSystemStats } = require('./core/processManager');
 
 let mainWindow = null;
@@ -61,12 +61,18 @@ function createWindow() {
   }
 }
 
+function safeSend(channel, data) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
+
 async function pushProcessData() {
   if (!mainWindow || isRefreshing) return;
   isRefreshing = true;
   try {
     const processes = await getProcesses();
-    if (mainWindow) mainWindow.webContents.send('process-update', processes);
+    safeSend('process-update', processes);
   } catch (e) {
     console.error('Process refresh error:', e);
   } finally {
@@ -78,7 +84,7 @@ async function pushStatsData() {
   if (!mainWindow) return;
   try {
     const stats = await getSystemStats();
-    if (mainWindow) mainWindow.webContents.send('stats-update', stats);
+    safeSend('stats-update', stats);
   } catch (e) {
     console.error('Stats refresh error:', e);
   }
@@ -147,6 +153,10 @@ ipcMain.handle('resume-process', async (_, pid) => {
 
 ipcMain.handle('open-file-location', async (_, filePath) => {
   if (!filePath) return { success: false, error: 'No path available' };
+  // Block UNC paths to prevent unintended NTLM credential exposure
+  if (!path.isAbsolute(filePath) || filePath.startsWith('\\\\')) {
+    return { success: false, error: 'Invalid path' };
+  }
   try {
     shell.showItemInFolder(filePath);
     return { success: true };
@@ -164,15 +174,24 @@ ipcMain.handle('search-online', async (_, query) => {
   }
 });
 
+// C-1 fix: use execFile so no shell interpolation; C-2 fix: only quit on success
 ipcMain.handle('relaunch-as-admin', () => {
-  const exePath = process.execPath;
-  const args = process.argv.slice(1).map(a => a.replace(/'/g, "''"));
-  const argList = args.length ? `-ArgumentList ${args.map(a => `'${a}'`).join(',')}` : '';
-  const cmd = app.isPackaged
-    ? `Start-Process '${exePath}' -Verb RunAs`
-    : `Start-Process '${exePath}' -Verb RunAs ${argList}`;
-  exec(`powershell -Command "${cmd}"`);
-  setTimeout(() => { isQuitting = true; app.quit(); }, 500);
+  const exePath = process.execPath.replace(/'/g, "''");
+  const args = process.argv.slice(1);
+  let psCmd;
+  if (app.isPackaged || args.length === 0) {
+    psCmd = `Start-Process -FilePath '${exePath}' -Verb RunAs`;
+  } else {
+    const safeArgs = args.map(a => `'${a.replace(/'/g, "''")}'`).join(',');
+    psCmd = `Start-Process -FilePath '${exePath}' -Verb RunAs -ArgumentList @(${safeArgs})`;
+  }
+  execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCmd], (err) => {
+    if (!err) {
+      isQuitting = true;
+      app.quit();
+    }
+    // If err, UAC was cancelled — keep current instance running
+  });
 });
 
 ipcMain.handle('get-startup-setting', () => app.getLoginItemSettings().openAtLogin);
@@ -189,11 +208,20 @@ ipcMain.on('window-maximize', () => {
 });
 ipcMain.on('window-close', () => mainWindow?.close()); // triggers hide-to-tray
 
+// H-1 fix: guard against missing userData dir; M-8 fix: only write flag after verifying
 function ensureDefaultStartup() {
-  const flagPath = path.join(app.getPath('userData'), '.startup-configured');
-  if (!fs.existsSync(flagPath)) {
-    app.setLoginItemSettings({ openAtLogin: true });
-    fs.writeFileSync(flagPath, '1');
+  try {
+    const dir = app.getPath('userData');
+    fs.mkdirSync(dir, { recursive: true });
+    const flagPath = path.join(dir, '.startup-configured');
+    if (!fs.existsSync(flagPath)) {
+      app.setLoginItemSettings({ openAtLogin: true });
+      if (app.getLoginItemSettings().openAtLogin) {
+        fs.writeFileSync(flagPath, '1');
+      }
+    }
+  } catch (e) {
+    console.error('ensureDefaultStartup failed:', e);
   }
 }
 
@@ -211,5 +239,5 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   clearInterval(processInterval);
   clearInterval(statsInterval);
-  if (!tray) app.quit(); // safety: no tray means quit normally
+  if (!tray) app.quit();
 });
